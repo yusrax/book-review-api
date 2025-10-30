@@ -1,14 +1,40 @@
 
-###> symfony/framework-bundle ###
+### Symfony Framework ###
+/.env
 /.env.local
-/.env.local.php
 /.env.*.local
+/.env.test
+/.env.local.php
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
 /vendor/
-###< symfony/framework-bundle ###
 
-###> lexik/jwt-authentication-bundle ###
+### Lexik JWT Authentication ###
 /config/jwt/*.pem
-###< lexik/jwt-authentication-bundle ###
+
+### Default ignored files ###
+/shelf/
+/workspace.xml
+/httpRequests/
+/dataSources/
+/dataSources.local.xml
+
+### IDE / editor files ###
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+### OS files ###
+.DS_Store
+Thumbs.db
+
+### Symfony cache and logs ###
+/var/cache/
+/var/log/
+/var/sessions/
+
+### Optional: PHPUnit & coverage ###
+.phpunit.result.cache
+coverage/
