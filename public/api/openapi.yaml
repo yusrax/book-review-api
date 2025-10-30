@@ -1,0 +1,1761 @@
+openapi: 3.0.0
+info:
+  title: Book Review API
+  description: API for managing books, reviews, and user interactions
+  version: 1.0.0
+  contact:
+    email: y.kabir1@edu.salford.ac.uk
+
+servers:
+  - url: /api
+    description: API base URL
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        profilePicture:
+          type: string
+          nullable: true
+          example: "/uploads/profile_pictures/john-doe.jpg"
+        roles:
+          type: array
+          items:
+            type: string
+          example: ["ROLE_USER"]
+        banned:
+          type: boolean
+          example: false
+        readingList:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+          example: []
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+          example: []
+
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        googleBookId:
+          type: string
+          example: "zyTCAlFPjgYC"
+        title:
+          type: string
+          example: "The Great Gatsby"
+        authors:
+          type: array
+          items:
+            type: string
+          example: ["F. Scott Fitzgerald"]
+        thumbnail:
+          type: string
+          nullable: true
+          example: "https://books.google.com/books/content?id=zyTCAlFPjgYC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+        description:
+          type: string
+          nullable: true
+          example: "The story of the mysteriously wealthy Jay Gatsby and his love for the beautiful Daisy Buchanan."
+        pageCount:
+          type: integer
+          nullable: true
+          example: 180
+        categories:
+          type: array
+          items:
+            type: string
+          example: ["Fiction", "Classics", "Literary"]
+        averageRating:
+          type: number
+          format: float
+          nullable: true
+          example: 4.5
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+          example: []
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        content:
+          type: string
+          example: "A masterpiece of American literature. The prose is beautiful and the story is timeless."
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-05-15T14:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-05-15T14:30:00Z"
+        user:
+          $ref: '#/components/schemas/User'
+          example: {"id": 1, "name": "John Doe"}
+        book:
+          $ref: '#/components/schemas/Book'
+          example: {"id": 1, "title": "The Great Gatsby"}
+        likesCount:
+          type: integer
+          example: 12
+        likedByCurrentUser:
+          type: boolean
+          example: true
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation failed"
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example: {"email": ["This value is not a valid email address."]}
+        code:
+          type: integer
+          example: 400
+      required:
+        - success
+        - message
+        - code
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized - User is not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: "Unauthorized"
+            code: 401
+            errors: {}
+
+    ForbiddenError:
+      description: Forbidden - User does not have required permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: "Access denied. Admin role required."
+            code: 403
+            errors: {}
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: "Resource not found"
+            code: 404
+            errors: {}
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: "Validation failed"
+            code: 400
+            errors:
+              email: ["This value is not a valid email address."]
+              password: ["This value is too short. It should have 8 characters or more."]
+
+    ConflictError:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: "Resource already exists"
+            code: 409
+            errors: {}
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: "An unexpected error occurred"
+            code: 500
+            errors: {}
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+                profilePicture:
+                  type: string
+                  format: binary
+                  description: Optional profile picture
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User registered successfully"
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Login successful"
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /user/me:
+    get:
+      summary: Get current user profile
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /user/update:
+    put:
+      summary: Update current user profile
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /user/delete:
+    delete:
+      summary: Delete current user account
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Account deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Account deleted successfully"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /user/profile-picture:
+    post:
+      summary: Update profile picture
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                profilePicture:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Profile picture updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Profile picture updated successfully"
+                  data:
+                    type: object
+                    properties:
+                      profilePicture:
+                        type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /books/search:
+    get:
+      summary: Search books
+      tags:
+        - Books
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+          example: "The Great Gatsby"
+      responses:
+        '200':
+          description: Books found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+              example:
+                - id: 1
+                  googleBookId: "zyTCAlFPjgYC"
+                  title: "The Great Gatsby"
+                  authors: ["F. Scott Fitzgerald"]
+                  thumbnail: "https://books.google.com/books/content?id=zyTCAlFPjgYC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+                  description: "The story of the mysteriously wealthy Jay Gatsby and his love for the beautiful Daisy Buchanan."
+                  pageCount: 180
+                  categories: ["Fiction", "Classics", "Literary"]
+                  averageRating: 4.5
+                  reviews: []
+                - id: 2
+                  googleBookId: "1q2w3e4r5t6y"
+                  title: "Gatsby: A Novel"
+                  authors: ["John Smith"]
+                  thumbnail: "https://books.google.com/books/content?id=1q2w3e4r5t6y&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+                  description: "A modern retelling of the classic story."
+                  pageCount: 250
+                  categories: ["Fiction", "Modern"]
+                  averageRating: 3.8
+                  reviews: []
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /books/{googleBookId}:
+    get:
+      summary: Get book details
+      tags:
+        - Books
+      parameters:
+        - name: googleBookId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "zyTCAlFPjgYC"
+        - name: review_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Review page number
+          example: 1
+        - name: review_limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+          description: Reviews per page
+          example: 10
+        - name: review_sort
+          in: query
+          schema:
+            type: string
+            enum: [createdAt, rating, likesCount]
+          description: Review sort field
+          example: "createdAt"
+        - name: review_direction
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Review sort direction
+          example: "desc"
+      responses:
+        '200':
+          description: Book details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    example: 1
+                  googleBookId:
+                    type: string
+                    example: "zyTCAlFPjgYC"
+                  title:
+                    type: string
+                    example: "The Great Gatsby"
+                  authors:
+                    type: array
+                    items:
+                      type: string
+                    example: ["F. Scott Fitzgerald"]
+                  thumbnail:
+                    type: string
+                    nullable: true
+                    example: "https://books.google.com/books/content?id=zyTCAlFPjgYC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+                  description:
+                    type: string
+                    nullable: true
+                    example: "The story of the mysteriously wealthy Jay Gatsby and his love for the beautiful Daisy Buchanan."
+                  pageCount:
+                    type: integer
+                    nullable: true
+                    example: 180
+                  categories:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Fiction", "Classics", "Literary"]
+                  averageRating:
+                    type: number
+                    format: float
+                    nullable: true
+                    example: 4.5
+                  reviews:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Review'
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 25
+                          page:
+                            type: integer
+                            example: 1
+                          limit:
+                            type: integer
+                            example: 10
+                          total_pages:
+                            type: integer
+                            example: 3
+                          has_next:
+                            type: boolean
+                            example: true
+                          has_prev:
+                            type: boolean
+                            example: false
+              example:
+                id: 1
+                googleBookId: "zyTCAlFPjgYC"
+                title: "The Great Gatsby"
+                authors: ["F. Scott Fitzgerald"]
+                thumbnail: "https://books.google.com/books/content?id=zyTCAlFPjgYC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+                description: "The story of the mysteriously wealthy Jay Gatsby and his love for the beautiful Daisy Buchanan."
+                pageCount: 180
+                categories: ["Fiction", "Classics", "Literary"]
+                averageRating: 4.5
+                reviews:
+                  data: [
+                    {
+                      id: 1,
+                      content: "A masterpiece of American literature. The prose is beautiful and the story is timeless.",
+                      rating: 5,
+                      createdAt: "2023-05-15T14:30:00Z",
+                      updatedAt: "2023-05-15T14:30:00Z",
+                      user: {"id": 1, "name": "John Doe"},
+                      likesCount: 12,
+                      likedByCurrentUser: true
+                    }
+                  ]
+                  pagination:
+                    total: 25
+                    page: 1
+                    limit: 10
+                    total_pages: 3
+                    has_next: true
+                    has_prev: false
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /books:
+    get:
+      summary: Get all books
+      tags:
+        - Books
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+              example:
+                - id: 1
+                  googleBookId: "zyTCAlFPjgYC"
+                  title: "The Great Gatsby"
+                  authors: ["F. Scott Fitzgerald"]
+                  thumbnail: "https://books.google.com/books/content?id=zyTCAlFPjgYC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+                  description: "The story of the mysteriously wealthy Jay Gatsby and his love for the beautiful Daisy Buchanan."
+                  pageCount: 180
+                  categories: ["Fiction", "Classics", "Literary"]
+                  averageRating: 4.5
+                  reviews: []
+                - id: 2
+                  googleBookId: "1q2w3e4r5t6y"
+                  title: "Gatsby: A Novel"
+                  authors: ["John Smith"]
+                  thumbnail: "https://books.google.com/books/content?id=1q2w3e4r5t6y&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+                  description: "A modern retelling of the classic story."
+                  pageCount: 250
+                  categories: ["Fiction", "Modern"]
+                  averageRating: 3.8
+                  reviews: []
+
+  /reviews:
+    post:
+      summary: Create a review
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookId:
+                  type: string
+                  example: "zyTCAlFPjgYC"
+                content:
+                  type: string
+                  example: "A masterpiece of American literature. The prose is beautiful and the story is timeless."
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  example: 5
+            example:
+              bookId: "zyTCAlFPjgYC"
+              content: "A masterpiece of American literature. The prose is beautiful and the story is timeless."
+              rating: 5
+      responses:
+        '201':
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Review created successfully"
+              example:
+                message: "Review created successfully"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    get:
+      summary: Get all reviews
+      tags:
+        - Reviews
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+          example: "Gatsby"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [createdAt, rating]
+          description: Sort field
+          example: "createdAt"
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Sort direction
+          example: "desc"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+          description: Items per page
+          example: 10
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 25
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 10
+                      total_pages:
+                        type: integer
+                        example: 3
+                      has_next:
+                        type: boolean
+                        example: true
+                      has_prev:
+                        type: boolean
+                        example: false
+              example:
+                data: [
+                  {
+                    id: 1,
+                    content: "A masterpiece of American literature. The prose is beautiful and the story is timeless.",
+                    rating: 5,
+                    createdAt: "2023-05-15T14:30:00Z",
+                    updatedAt: "2023-05-15T14:30:00Z",
+                    user: {"id": 1, "name": "John Doe"},
+                    book: {"id": 1, "title": "The Great Gatsby"},
+                    likesCount: 12,
+                    likedByCurrentUser: true
+                  },
+                  {
+                    id: 2,
+                    content: "A classic novel that everyone should read at least once.",
+                    rating: 4,
+                    createdAt: "2023-05-14T10:15:00Z",
+                    updatedAt: "2023-05-14T10:15:00Z",
+                    user: {"id": 2, "name": "Jane Smith"},
+                    book: {"id": 1, "title": "The Great Gatsby"},
+                    likesCount: 8,
+                    likedByCurrentUser: false
+                  }
+                ]
+                pagination:
+                  total: 25
+                  page: 1
+                  limit: 10
+                  total_pages: 3
+                  has_next: true
+                  has_prev: false
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /reviews/{id}:
+    put:
+      summary: Update a review
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  example: "An absolute masterpiece of American literature. The prose is beautiful and the story is timeless."
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  example: 5
+            example:
+              content: "An absolute masterpiece of American literature. The prose is beautiful and the story is timeless."
+              rating: 5
+      responses:
+        '200':
+          description: Review updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Review updated successfully"
+              example:
+                message: "Review updated successfully"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      summary: Delete a review
+      description: Delete a review. This operation can be performed by the review author, an admin, or a moderator.
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Review deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Review deleted successfully"
+              example:
+                message: "Review deleted successfully"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden - User is not the review author, admin, or moderator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: "Access denied. You must be the review author, an admin, or a moderator to delete this review."
+                code: 403
+                errors: {}
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /reviews/{id}/toggle-like:
+    post:
+      summary: Toggle like on a review
+      tags:
+        - Reviews
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Review like toggled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      liked:
+                        type: boolean
+                      likesCount:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /reading-list:
+    get:
+      summary: Get user's reading list
+      tags:
+        - Reading List
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Reading list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+              example:
+                - id: 1
+                  googleBookId: "zyTCAlFPjgYC"
+                  title: "The Great Gatsby"
+                  authors: ["F. Scott Fitzgerald"]
+                  thumbnail: "https://books.google.com/books/content?id=zyTCAlFPjgYC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+                  description: "The story of the mysteriously wealthy Jay Gatsby and his love for the beautiful Daisy Buchanan."
+                  pageCount: 180
+                  categories: ["Fiction", "Classics", "Literary"]
+                  averageRating: 4.5
+                  reviews: []
+                - id: 3
+                  googleBookId: "abc123def456"
+                  title: "To Kill a Mockingbird"
+                  authors: ["Harper Lee"]
+                  thumbnail: "https://books.google.com/books/content?id=abc123def456&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+                  description: "The story of racial injustice and the loss of innocence in the American South."
+                  pageCount: 281
+                  categories: ["Fiction", "Classics", "Literary"]
+                  averageRating: 4.8
+                  reviews: []
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /reading-list/{googleBookId}:
+    post:
+      summary: Add book to reading list
+      tags:
+        - Reading List
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: googleBookId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "zyTCAlFPjgYC"
+      responses:
+        '200':
+          description: Book added to reading list successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Book added to reading list successfully"
+              example:
+                message: "Book added to reading list successfully"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      summary: Remove book from reading list
+      tags:
+        - Reading List
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: googleBookId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "zyTCAlFPjgYC"
+      responses:
+        '200':
+          description: Book removed from reading list successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Book removed from reading list successfully"
+              example:
+                message: "Book removed from reading list successfully"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /admin/users:
+    get:
+      summary: List all users
+      description: |
+        List all users with pagination. Accessible by admins and moderators.
+        - Admins and moderators can view all users
+        - Pagination parameters are optional
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-based)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: Total number of users
+                      page:
+                        type: integer
+                        description: Current page number
+                      limit:
+                        type: integer
+                        description: Number of items per page
+                      total_pages:
+                        type: integer
+                        description: Total number of pages
+                      has_next:
+                        type: boolean
+                        description: Whether there is a next page
+                      has_prev:
+                        type: boolean
+                        description: Whether there is a previous page
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Access denied. Admin or moderator role required.
+                code: 403
+                errors: {}
+
+  /admin/users/{id}:
+    get:
+      summary: Get user details
+      description: |
+        Get detailed information about a specific user. Accessible by admins and moderators.
+        - Admins and moderators can view any user's details
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Access denied. Admin or moderator role required.
+                code: 403
+                errors: {}
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      summary: Update user
+      description: |
+        Update user information. Admin only operation.
+        - Only admins can update user information
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: User's name
+                email:
+                  type: string
+                  format: email
+                  description: User's email
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Access denied. Admin role required.
+                code: 403
+                errors: {}
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      summary: Delete user
+      description: |
+        Delete a user. Admin only operation.
+        - Only admins can delete users
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Access denied. Admin role required.
+                code: 403
+                errors: {}
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/users/{id}/promote:
+    post:
+      summary: Promote user to admin
+      description: |
+        Promote a user to admin role. Admin only operation.
+        - Only admins can promote users
+        - Cannot promote a user who is already an admin
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User promoted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Access denied. Admin role required.
+                code: 403
+                errors: {}
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: User is already an admin
+                code: 400
+                errors: {}
+
+  /admin/users/{id}/demote:
+    post:
+      summary: Demote admin to user
+      description: |
+        Demote an admin to regular user. Admin only operation.
+        - Only admins can demote other admins
+        - Cannot demote a user who is not an admin
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User demoted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Access denied. Admin role required.
+                code: 403
+                errors: {}
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: User is not an admin
+                code: 400
+                errors: {}
+
+  /admin/users/{id}/ban:
+    post:
+      summary: Ban user
+      description: |
+        Ban a user. Accessible by admins and moderators.
+        - Admins and moderators can ban users
+        - Cannot ban a user who is already banned
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User banned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Access denied. Admin or moderator role required.
+                code: 403
+                errors: {}
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: User is already banned
+                code: 400
+                errors: {}
+
+  /admin/users/{id}/unban:
+    post:
+      summary: Unban user
+      description: |
+        Unban a user. Accessible by admins and moderators.
+        - Admins and moderators can unban users
+        - Cannot unban a user who is not banned
+      tags:
+        - Admin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User unbanned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Access denied. Admin or moderator role required.
+                code: 403
+                errors: {}
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: User is not banned
+                code: 400
+                errors: {}
+
+  /books/open-library/{key}:
+    post:
+      tags:
+        - Books
+      summary: Add a book from Open Library
+      description: Fetches book data from Open Library API and adds it to the database
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Open Library book key (e.g., W123456)
+      responses:
+        '201':
+          description: Book successfully added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Book added successfully
+                  data:
+                    type: object
+                    properties:
+                      book:
+                        $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /user/{id}/follow:
+    post:
+      summary: Follow a user
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User followed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User followed successfully"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /user/{id}/unfollow:
+    post:
+      summary: Unfollow a user
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User unfollowed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User unfollowed successfully"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /user/{id}/followers:
+    get:
+      summary: Get user's followers
+      tags:
+        - User
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Followers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total_pages:
+                        type: integer
+                      has_next:
+                        type: boolean
+                      has_prev:
+                        type: boolean
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /user/{id}/following:
+    get:
+      summary: Get users followed by the specified user
+      tags:
+        - User
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Following users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total_pages:
+                        type: integer
+                      has_next:
+                        type: boolean
+                      has_prev:
+                        type: boolean
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError' 

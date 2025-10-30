@@ -1,0 +1,662 @@
+{
+  "info": {
+    "name": "Book Review API",
+    "description": "API for managing books, reviews, and user interactions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "John Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "john.doe@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "SecurePassword123!",
+                  "type": "text"
+                },
+                {
+                  "key": "profilePicture",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/me",
+              "host": ["{{base_url}}"],
+              "path": ["user", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith\",\n  \"email\": \"john.smith@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/update",
+              "host": ["{{base_url}}"],
+              "path": ["user", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/delete",
+              "host": ["{{base_url}}"],
+              "path": ["user", "delete"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile Picture",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "profilePicture",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/user/profile-picture",
+              "host": ["{{base_url}}"],
+              "path": ["user", "profile-picture"]
+            }
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get User Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/1/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["user", "1", "reviews"]
+            }
+          }
+        },
+        {
+          "name": "Get User Reading List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/1/reading-list",
+              "host": ["{{base_url}}"],
+              "path": ["user", "1", "reading-list"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Books",
+      "item": [
+        {
+          "name": "Search Books",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/books/search?q=The Great Gatsby",
+              "host": ["{{base_url}}"],
+              "path": ["books", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "The Great Gatsby"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Books",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/books?page=1&limit=10&sort=title&direction=asc",
+              "host": ["{{base_url}}"],
+              "path": ["books"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "title"
+                },
+                {
+                  "key": "direction",
+                  "value": "asc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Book Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/books/zyTCAlFPjgYC",
+              "host": ["{{base_url}}"],
+              "path": ["books", "zyTCAlFPjgYC"]
+            }
+          }
+        },
+        {
+          "name": "Add Book from Open Library",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/open-library/OL1234567M",
+              "host": ["{{base_url}}"],
+              "path": ["books", "open-library", "OL1234567M"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookId\": \"zyTCAlFPjgYC\",\n  \"content\": \"A masterpiece of American literature. The prose is beautiful and the story is timeless.\",\n  \"rating\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["reviews"]
+            }
+          }
+        },
+        {
+          "name": "Get All Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reviews?q=Gatsby&sort=createdAt&direction=desc&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["reviews"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Gatsby"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "direction",
+                  "value": "desc"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Book Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reviews?bookId=zyTCAlFPjgYC",
+              "host": ["{{base_url}}"],
+              "path": ["reviews"],
+              "query": [
+                {
+                  "key": "bookId",
+                  "value": "zyTCAlFPjgYC"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Review",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated review content\",\n  \"rating\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews/1",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reviews/1",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "1"]
+            }
+          }
+        },
+        {
+          "name": "Like Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reviews/1/like",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "1", "like"]
+            }
+          }
+        },
+        {
+          "name": "Unlike Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reviews/1/unlike",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "1", "unlike"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reading List",
+      "item": [
+        {
+          "name": "Get Reading List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reading-list",
+              "host": ["{{base_url}}"],
+              "path": ["reading-list"]
+            }
+          }
+        },
+        {
+          "name": "Add to Reading List",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reading-list/zyTCAlFPjgYC",
+              "host": ["{{base_url}}"],
+              "path": ["reading-list", "zyTCAlFPjgYC"]
+            }
+          }
+        },
+        {
+          "name": "Remove from Reading List",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reading-list/zyTCAlFPjgYC",
+              "host": ["{{base_url}}"],
+              "path": ["reading-list", "zyTCAlFPjgYC"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Promote User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/1/promote",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "1", "promote"]
+            }
+          }
+        },
+        {
+          "name": "Demote User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/1/demote",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "1", "demote"]
+            }
+          }
+        },
+        {
+          "name": "Ban User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/1/ban",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "1", "ban"]
+            }
+          }
+        },
+        {
+          "name": "Unban User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/1/unban",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "1", "unban"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api"
+    },
+    {
+      "key": "token",
+      "value": "your_jwt_token_here"
+    }
+  ]
+} 
